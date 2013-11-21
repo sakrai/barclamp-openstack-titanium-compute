@@ -1,0 +1,133 @@
+[DEFAULT]
+# LOGS/STATE
+daemonize=True
+verbose=<%= node[:nova][:verbose] ? 'True' : 'False' %>
+dhcpbridge_flagfile=/etc/nova/nova.conf
+dhcpbridge=<%= @dhcpbridge %>
+logdir=/var/log/nova
+state_path=/var/lib/nova
+lock_path=/var/lock/nova
+use_syslog=True
+rootwrap_config=/etc/nova/rootwrap.conf
+
+
+# RABBITMQ
+<% if @rabbit_settings -%>
+rabbit_host=<%= @rabbit_settings[:address] %>
+<% unless @rabbit_settings[:port].nil? -%>
+rabbit_port=<%= @rabbit_settings[:port] %>
+<% end -%>
+rabbit_userid=<%= @rabbit_settings[:user] %>
+rabbit_password=<%= @rabbit_settings[:password] %>
+rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
+<% end -%>
+
+# SCHEDULER
+# Default to multi-scheduler so that volume and compute can override
+
+# API
+osapi_compute_extension=nova.api.openstack.compute.contrib.standard_extensions
+api_rate_limit = False
+
+
+# NETWORK
+<% if node[:nova][:networking_backend]=="quantum" -%>
+# Network settings
+default_floating_pool=floating
+network_api_class=nova.network.quantumv2.api.API
+quantum_url=http://<%= @quantum_server_ip %>:<%= @quantum_server_port %>
+quantum_auth_strategy=keystone
+quantum_admin_tenant_name=<%= @keystone_service_tenant %>
+quantum_admin_username=<%= @quantum_service_user %>
+quantum_admin_password=<%= @quantum_service_password %>
+quantum_admin_auth_url=http://<%= @keystone_address %>:<%= @keystone_admin_port %>/v2.0
+libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
+linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
+security_group_api=quantum
+firewall_driver=nova.virt.firewall.NoopFirewallDriver
+service_quantum_metadata_proxy=True
+# Not really secret.  Quantum should be randomly generating this,
+# and we should be using whatever it generates.
+quantum_metadata_proxy_shared_secret=Secret
+<% else -%>
+my_ip=<%= node[:nova][:my_ip] %>
+allow_same_net_traffic=<%= node[:nova][:network][:allow_same_net_traffic] ? "True" : "False" %>
+ec2_host=<%= @ec2_host %>
+ec2_dmz_host=<%= @ec2_dmz_host %>
+osapi_host=<%= @ec2_host %>
+fixed_range=<%= node[:nova][:network][:fixed_range] %>
+floating_range=<%= node[:nova][:network][:floating_range] %>
+<% if node[:nova][:network][:public_interface] -%>
+public_interface=<%= node[:nova][:network][:public_interface] %>
+<% end -%>
+network_size=<%= node[:nova][:network][:network_size] %>
+num_networks=<%= node[:nova][:network][:num_networks] %>
+
+<% if node[:nova][:network][:dhcp_enabled] -%>
+<% if node[:nova][:network][:tenant_vlans] -%>
+# DHCP Vlan Mode
+network_manager=nova.network.manager.VlanManager
+vlan_interface=<%= node[:nova][:network][:vlan_interface] %>
+vlan_start=<%= node[:nova][:network][:vlan_start] %>
+<% else -%>
+# DHCP Flat Mode
+network_manager=nova.network.manager.FlatDHCPManager
+flat_network_dns=<%= @dns_server_public_ip %>
+flat_network_dhcp_start=<%= node[:nova][:network][:flat_network_dhcp_start] %>
+flat_interface=<%= node[:nova][:network][:flat_interface] %>
+flat_network_bridge=<%= node[:nova][:network][:flat_network_bridge] %>
+<% end -%>
+<% else -%>
+# Flat Mode
+network_manager=nova.network.manager.FlatManager
+flat_interface=<%= node[:nova][:network][:flat_interface] %>
+flat_network_bridge=<%= node[:nova][:network][:flat_network_bridge] %>
+flat_network_dns=<%= @dns_server_public_ip %>
+flat_injected=True
+<% end -%>
+<% end -%>
+
+# GLANCE
+<% unless @glance_server_ip.nil? -%>
+image_service=nova.image.glance.GlanceImageService
+glance_api_servers=<%= @glance_server_ip %>:<%= @glance_server_port %>
+<% end -%>
+
+# COMPUTE
+<% if @database_connection -%>
+sql_connection=<%= @database_connection %>
+<% end -%>
+connection_type=libvirt
+compute_manager=nova.compute.manager.ComputeManager
+instance_name_template=instance-%08x
+compute_scheduler_driver=nova.scheduler.filter_scheduler.FilterScheduler
+
+# VNCPROXY
+<% unless @vncproxy_public_ip.nil? -%>
+<% if node[:nova][:use_novnc] -%>
+<% if node[:roles].include?("nova-multi-controller") -%>
+novncproxy_host=0.0.0.0
+novncproxy_port=6080
+<% end -%>
+novncproxy_base_url=http://<%= @vncproxy_public_ip %>:6080/vnc_auto.html
+<% else -%>
+xvpvncproxy_base_url=http://<%= @vncproxy_public_ip %>:6081/console
+<% end -%>
+<% end -%>
+vncserver_listen=0.0.0.0
+vncserver_proxyclient_address=<%= node[:nova][:my_ip] %>
+vnc_enabled=True
+
+# MISC
+use_deprecated_auth=false
+allow_admin_api=true
+enable_zone_routing=true
+auth_strategy=keystone
+volume_api_class=nova.volume.cinder.API
+enabled_apis=ec2,osapi_compute,metadata
+cinder_catalog_info=volume:cinder:internalURL
+
+# This needs to be conditionalized at some point, maybe.
+[conductor]
+use_local=false
+

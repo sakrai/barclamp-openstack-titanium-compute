@@ -1,0 +1,128 @@
+{
+  "id": "bc-template-nova",
+  "description": "installs and configures the Openstack Nova component. It relies upon the network and glance barclamps for normal operation.",
+  "attributes": {
+    "nova": {
+      "rabbitmq_instance": "none",
+      "keystone_instance": "none",
+      "service_user": "nova",
+      "glance_instance": "none",
+      "cinder_instance": "none",
+      "quantum_instance": "none",
+      "libvirt_type": "kvm",
+      "use_novnc": true,
+      "verbose": true,
+      "user": "nova",
+      "gitrepo": "http://github.com/openstack/nova.git",
+      "git_instance": "",
+      "git_refspec": "stable/grizzly",
+      "use_gitrepo": false,
+      "use_gitbarclamp": false,
+      "use_pip_cache": false,
+      "networking_backend": "quantum",
+      "pfs_deps": [
+        "dnsmasq-base",
+        "dnsmasq-utils",
+        "kpartx",
+        "parted",
+        "iputils-arping",
+        "kvm",
+        "gawk",
+        "iptables",
+        "ebtables",
+        "sqlite3",
+        "sudo",
+        "kvm",
+        "libvirt-bin",
+        "vlan",
+        "curl",
+        "socat",
+        "python-anyjson",
+        "python-mysqldb",
+        "python-xattr",
+        "python-lxml",
+        "python-mox",
+        "python-paste",
+        "python-migrate",
+        "python-gflags",
+        "python-greenlet",
+        "python-libvirt",
+        "python-libxml2",
+        "python-routes",
+        "python-netaddr",
+        "python-pastedeploy",
+        "python-eventlet",
+        "python-cheetah",
+        "python-carrot",
+        "python-tempita",
+        "python-sqlalchemy",
+        "python-paramiko",
+        "python-iso8601",
+        "python-httplib2",
+        "python-suds",
+        "python-lockfile",
+        "python-m2crypto",
+        "python-boto",
+        "python-kombu",
+        "python-feedparser",
+        "python-iso8601",
+        "python-dateutil",
+        "python-numpy",
+        "lvm2",
+        "open-iscsi",
+        "open-iscsi-utils",
+        "tgt",
+        "python-amqplib",
+        "python-boto",
+        "python-webob",
+        "pip://eventlet>=0.9.17",
+        "pip://setuptools_git>=0.4",
+        "pip://python-quantumclient>=2.1",
+        "pip://python-glanceclient>=0.5.0,<2",
+        "pip://python-novaclient",
+        "pip://python-cinderclient",
+        "pip://python-keystoneclient>=0.2.0",
+        "pip://prettytable>=0.6,<0.7"
+      ],
+      "network": {
+        "ha_enabled": true,
+        "tenant_vlans": false,
+        "dhcp_enabled": true,
+        "allow_same_net_traffic": false,
+        "num_networks": 1,
+        "network_size": 256
+      },
+      "db": {
+        "database_instance": "none",
+        "password": "",
+        "user": "nova",
+        "database": "nova"
+      }
+    }
+  },
+  "deployment": {
+    "nova": {
+      "crowbar-revision": 0,
+      "element_states": {
+        "nova-multi-controller": [ "readying", "ready", "applying" ],
+        "nova-multi-compute": [ "readying", "ready", "applying" ]
+      },
+      "elements": {},
+      "element_order": [
+        [ "nova-multi-controller" ],
+        [ "nova-multi-compute" ]
+      ],
+      "element_run_list_order": {
+        "nova-multi-controller": 95,
+        "nova-multi-compute": 97
+      },
+      "config": {
+        "environment": "nova-config-base",
+        "mode": "full",
+        "transitions": false,
+        "transition_list": []
+      }
+    }
+  }
+}
+
