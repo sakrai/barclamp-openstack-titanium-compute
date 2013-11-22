@@ -29,14 +29,14 @@ class NovaService < ServiceObject
 =begin
   def proposal_dependencies(role)
     answer = []
-    answer << { "barclamp" => "database", "inst" => role.default_attributes["nova"]["db"]["database_instance"] }
+    #answer << { "barclamp" => "database", "inst" => role.default_attributes["nova"]["db"]["database_instance"] }
     answer << { "barclamp" => "keystone", "inst" => role.default_attributes["nova"]["keystone_instance"] }
     answer << { "barclamp" => "glance", "inst" => role.default_attributes["nova"]["glance_instance"] }
     answer << { "barclamp" => "rabbitmq", "inst" => role.default_attributes["nova"]["rabbitmq_instance"] }
     answer << { "barclamp" => "cinder", "inst" => role.default_attributes[@bc_name]["cinder_instance"] }
-    if role.default_attributes[@bc_name]["use_gitrepo"]
-      answer << { "barclamp" => "git", "inst" => role.default_attributes[@bc_name]["git_instance"] }
-    end
+    #if role.default_attributes[@bc_name]["use_gitrepo"]
+    #  answer << { "barclamp" => "git", "inst" => role.default_attributes[@bc_name]["git_instance"] }
+    #end
 
     if role.default_attributes[@bc_name]["networking_backend"] == "quantum"
       answer << { "barclamp" => "quantum", "inst" => role.default_attributes[@bc_name]["quantum_instance"] }
@@ -44,7 +44,6 @@ class NovaService < ServiceObject
     answer
   end
 =end
-# end of change
 
   #
   # Lots of enhancements here.  Like:
@@ -73,6 +72,8 @@ class NovaService < ServiceObject
       end
     end
 
+# sak - commneted out as using percona
+=begin
     base["attributes"][@bc_name]["git_instance"] = ""
     begin
       gitService = GitService.new(@logger)
@@ -88,8 +89,7 @@ class NovaService < ServiceObject
       @logger.info("#{@bc_name} create_proposal: no git found")
     end
 
-# sak - commneted out as using percona
-=begin
+
     base["attributes"]["nova"]["db"]["database_instance"] = ""
     begin
       databaseService = DatabaseService.new(@logger)

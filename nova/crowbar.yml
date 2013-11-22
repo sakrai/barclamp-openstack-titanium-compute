@@ -116,6 +116,7 @@ debs:
     - python-eventlet
     - bzr
     - mysql-client
+    #- percona-client
     - socat
     - python-mox
 

@@ -33,7 +33,9 @@ if node[:nova][:networking_backend]=="quantum"
 end
 
 include_recipe "nova::config"
-include_recipe "database::client"
+#include_recipe "percona::client"
+#include_recipe "database::client"
+#package "mysql-client"
 
 nova_package("compute")
 
@@ -105,6 +107,16 @@ if node[:nova][:networking_backend]=="quantum"
     action :nothing
     supports :status => true, :start => true, :stop => true, :restart => true
   end
+
+=begin
+  # Volume template files
+  cookbook_file "_create.html" do
+    path  "#{pathDashboard}/dashboards/project/volumes/templates/volumes/_create.html"
+    #path  '/usr/share/openstack-dashboard/openstack_dashboard/dashboards/project/volumes/templates/volumes/_create.html'
+    action   :create
+  end
+=end
+
   cookbook_file "/etc/libvirt/qemu.conf" do
     user "root"
     group "root"

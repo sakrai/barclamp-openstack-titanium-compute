@@ -21,7 +21,6 @@
 # sak - add VIP
 haproxy = search(:node, "roles:haproxy").first
 if haproxy.length > 0
-  Chef::Log.info("admin vip at #{haproxy}")
   admin_vip = haproxy.haproxy.admin_ip
   public_vip = haproxy.haproxy.public_ip
 end
@@ -74,7 +73,10 @@ backend_name = "mysql"
 #end of change
 database_connection = "#{backend_name}://#{node[:nova][:db][:user]}:#{node[:nova][:db][:password]}@#{database_address}/#{node[:nova][:db][:database]}"
 
+# sak - rabbitmq intergration
+
 env_filter = " AND rabbitmq_config_environment:rabbitmq-config-#{node[:nova][:rabbitmq_instance]}"
+=begin
 rabbits = search(:node, "roles:rabbitmq-server#{env_filter}") || []
 if rabbits.length > 0
   rabbit = rabbits[0]
@@ -82,17 +84,65 @@ if rabbits.length > 0
 else
   rabbit = node
 end
-#rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "admin").address 
-rabbit_address = admin_vip
-Chef::Log.info("Rabbit server found at #{rabbit_address}")
+
+rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "admin").address 
+=end
+# end of change
+
+# sak - get rabbitmq attribute values
+rabbit2 = search(:node, "roles:rabbitmq").first
+if rabbit2.length > 0
+  user = rabbit2.rabbitmq.user
+  password = rabbit2.rabbitmq.password
+  port = rabbit2.rabbitmq.port
+  vhost = rabbit2.rabbitmq.vhost
+end
+
+=begin
 rabbit_settings = {
   :address => rabbit_address,
-  :port => rabbit[:rabbitmq][:port],
-  :user => rabbit[:rabbitmq][:user],
-  :password => rabbit[:rabbitmq][:password],
-  :vhost => rabbit[:rabbitmq][:vhost]
+  :port => port,
+  :user => user,
+  :password => password,
+  :vhost => vhost
 }
+=end
 
+# replaced with the below - sak
+barclamp_name = "rabbitmq"
+instance_var_name = "rabbitmq_instance"
+begin
+  proposal_name = "bc-" + barclamp_name + "-" + node["quantumr"]["#{instance_var_name}"]
+  proposal_databag = data_bag_item('crowbar', proposal_name)
+  cont1_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][0]
+  cont2_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][1]
+  cont3_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][2]
+  admin_network_databag = data_bag_item('crowbar', 'admin_network')
+  cont1_admin_ip = admin_network_databag["allocated_by_name"]["#{cont1_name}"]["address"]
+  cont2_admin_ip = admin_network_databag["allocated_by_name"]["#{cont2_name}"]["address"]
+  cont3_admin_ip = admin_network_databag["allocated_by_name"]["#{cont3_name}"]["address"]
+  
+  # and construct a hosts string
+  rabbitmq_port = ":" + port.to_s
+  rabbit_address = cont1_admin_ip + rabbitmq_port + "," + cont2_admin_ip + rabbitmq_port + "," + cont3_admin_ip + rabbitmq_port
+
+  Chef::Log.info("Rabbit server found at #{rabbit_address}")
+  
+  rabbit_settings = {
+  :hosts => rabbit_address,
+  :port => port,
+  :user => user,
+  :password => password,
+  :vhost => vhost
+  }
+rescue
+  # if databag not found
+  rabbit_settings = nil
+end
+# end of change
+
+# sak - use VIP
+=begin
 apis = search(:node, "recipes:nova\\:\\:api#{env_filter}") || []
 if apis.length > 0 and !node[:nova][:network][:ha_enabled]
   api = apis[0]
@@ -100,6 +150,9 @@ if apis.length > 0 and !node[:nova][:network][:ha_enabled]
 else
   api = node
 end
+=end
+# end of change
+
 # sak - use VIP
 #public_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "public").address
 #admin_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "admin").address

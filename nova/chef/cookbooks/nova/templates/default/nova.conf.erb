@@ -13,7 +13,7 @@ rootwrap_config=/etc/nova/rootwrap.conf
 
 # RABBITMQ
 <% if @rabbit_settings -%>
-rabbit_host=<%= @rabbit_settings[:address] %>
+rabbit_hosts=<%= @rabbit_settings[:hosts] %>
 <% unless @rabbit_settings[:port].nil? -%>
 rabbit_port=<%= @rabbit_settings[:port] %>
 <% end -%>
@@ -21,6 +21,7 @@ rabbit_userid=<%= @rabbit_settings[:user] %>
 rabbit_password=<%= @rabbit_settings[:password] %>
 rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
 <% end -%>
+
 
 # SCHEDULER
 # Default to multi-scheduler so that volume and compute can override

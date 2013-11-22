@@ -20,8 +20,16 @@
 include_recipe "nova::config"
 
 # sak - add VIP
-admin_vip = node[:haproxy][:admin_ip]
-public_vip = node[:haproxy][:public_ip]
+haproxy = search(:node, "roles:haproxy").first
+if haproxy.length > 0
+  admin_vip = haproxy.haproxy.admin_ip
+  public_vip = haproxy.haproxy.public_ip
+end
+
+Chef::Log.info("============================================")
+Chef::Log.info("admin vip at #{admin_vip}")
+Chef::Log.info("public vip at #{public_vip}")
+Chef::Log.info("============================================")
 #end of change
 
 env_filter = " AND keystone_config_environment:keystone-config-#{node[:nova][:keystone_instance]}"
