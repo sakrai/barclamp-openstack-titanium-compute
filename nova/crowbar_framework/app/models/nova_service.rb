@@ -200,9 +200,7 @@ class NovaService < ServiceObject
       raise(I18n.t('model.service.dependency_missing', :name => @bc_name, :dependson => "quantum"))
     end
 
-    # sak - hard coded database password
-    #base["attributes"]["nova"]["db"]["password"] = random_password
-    base["attributes"]["nova"]["db"]["password"] = "nova"
+    base["attributes"]["nova"]["db"]["password"] = random_password
 
     @logger.debug("Nova create_proposal: exiting")
     base
