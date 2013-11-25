@@ -89,26 +89,32 @@ rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "
 =end
 # end of change
 
+
 # sak - get rabbitmq attribute values
+rabbit_address = admin_vip
+
 rabbit2 = search(:node, "roles:rabbitmq").first
 if rabbit2.length > 0
   user = rabbit2.rabbitmq.user
   password = rabbit2.rabbitmq.password
   port = rabbit2.rabbitmq.port
   vhost = rabbit2.rabbitmq.vhost
+  Chef::Log.info("============================================")
+  Chef::Log.info("sak rabbitmq user at #{user}")
+  Chef::Log.info("============================================")
 end
 
-=begin
 rabbit_settings = {
-  :address => rabbit_address,
+  #:host => rabbit_address,
   :port => port,
   :user => user,
   :password => password,
   :vhost => vhost
 }
-=end
+
 
 # replaced with the below - sak
+=begin
 barclamp_name = "rabbitmq"
 instance_var_name = "rabbitmq_instance"
 begin
@@ -140,6 +146,7 @@ rescue
   rabbit_settings = nil
 end
 # end of change
+=end
 
 # sak - use VIP
 =begin
@@ -156,8 +163,10 @@ end
 # sak - use VIP
 #public_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "public").address
 #admin_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "admin").address
-public_api_ip = public_vip
-admin_api_ip = admin_vip
+public_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
+admin_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
+#public_api_ip = public_vip
+#admin_api_ip = admin_vip
 # end of change
 node[:nova][:api] = public_api_ip
 Chef::Log.info("Api server found at #{public_api_ip} #{admin_api_ip}")
