@@ -14,8 +14,8 @@ rootwrap_config=/etc/nova/rootwrap.conf
 # RABBITMQ
 #<% if @rabbit_settings -%>
 # This is hard code to local ip's, need to change
-#rabbit_host=<%= @rabbit_settings[:host] %>
-rabbit_hosts=10.49.117.227:5672,10.49.117.228:5672,10.49.117.229:5672
+rabbit_hosts=<%= @rabbit_settings[:address] %>
+#rabbit_hosts=10.49.117.227:5672,10.49.117.228:5672,10.49.117.229:5672
 rabbit_ha_queues=True
 #<% unless @rabbit_settings[:port].nil? -%>
 rabbit_port=<%= @rabbit_settings[:port] %>

@@ -89,64 +89,46 @@ rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "
 =end
 # end of change
 
-
 # sak - get rabbitmq attribute values
-rabbit_address = admin_vip
-
-rabbit2 = search(:node, "roles:rabbitmq").first
-if rabbit2.length > 0
-  user = rabbit2.rabbitmq.user
-  password = rabbit2.rabbitmq.password
-  port = rabbit2.rabbitmq.port
-  vhost = rabbit2.rabbitmq.vhost
-  Chef::Log.info("============================================")
-  Chef::Log.info("sak rabbitmq user at #{user}")
-  Chef::Log.info("============================================")
+Chef::Log.info("============== Nova config recipe : Builds rabbitmq host string ==============") 
+rabbits = search(:node, "roles:rabbitmq") || [] 
+if rabbits.length > 0
+  rabbit = rabbits[0]
+  Chef::Log.info("Rabbit node #{rabbit}")
+  rabbit = node if rabbit.name == node.name
+else
+  rabbit = node
 end
 
+
+rabbitmq_port = rabbit[:rabbitmq][:port]
+rabbitmq_hosts = ""
+
+rabbits.each do |rabbitHost|
+  if rabbitHost == rabbits.last
+    host = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbitHost, "admin").address
+    rabbitmq_hosts = "#{rabbitmq_hosts}#{host}:#{rabbitmq_port}"
+  else
+    host = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbitHost, "admin").address
+    rabbitmq_hosts = "#{rabbitmq_hosts}#{host}:#{rabbitmq_port},"
+  end
+end
+
+Chef::Log.info("Rabbit host address #{rabbitmq_hosts}") 
+Chef::Log.info("Rabbit port #{rabbit[:rabbitmq][:port]}") 
+Chef::Log.info("Rabbit userid #{rabbit[:rabbitmq][:user]}") 
+Chef::Log.info("Rabbit password #{rabbit[:rabbitmq][:password]}") 
+Chef::Log.info("Rabbit vhost #{rabbit[:rabbitmq][:vhost]}") 
+
 rabbit_settings = {
-  #:host => rabbit_address,
-  :port => port,
-  :user => user,
-  :password => password,
-  :vhost => vhost
+    :address => rabbitmq_hosts,
+    :port => rabbit[:rabbitmq][:port],
+    :user => rabbit[:rabbitmq][:user],
+    :password => rabbit[:rabbitmq][:password],
+    :vhost => rabbit[:rabbitmq][:vhost]
 }
 
 
-# replaced with the below - sak
-=begin
-barclamp_name = "rabbitmq"
-instance_var_name = "rabbitmq_instance"
-begin
-  proposal_name = "bc-" + barclamp_name + "-" + node["quantumr"]["#{instance_var_name}"]
-  proposal_databag = data_bag_item('crowbar', proposal_name)
-  cont1_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][0]
-  cont2_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][1]
-  cont3_name = proposal_databag["deployment"]["#{barclamp_name}"]["elements"]["#{barclamp_name}"][2]
-  admin_network_databag = data_bag_item('crowbar', 'admin_network')
-  cont1_admin_ip = admin_network_databag["allocated_by_name"]["#{cont1_name}"]["address"]
-  cont2_admin_ip = admin_network_databag["allocated_by_name"]["#{cont2_name}"]["address"]
-  cont3_admin_ip = admin_network_databag["allocated_by_name"]["#{cont3_name}"]["address"]
-  
-  # and construct a hosts string
-  rabbitmq_port = ":" + port.to_s
-  rabbit_address = cont1_admin_ip + rabbitmq_port + "," + cont2_admin_ip + rabbitmq_port + "," + cont3_admin_ip + rabbitmq_port
-
-  Chef::Log.info("Rabbit server found at #{rabbit_address}")
-  
-  rabbit_settings = {
-  :hosts => rabbit_address,
-  :port => port,
-  :user => user,
-  :password => password,
-  :vhost => vhost
-  }
-rescue
-  # if databag not found
-  rabbit_settings = nil
-end
-# end of change
-=end
 
 # sak - use VIP
 =begin
