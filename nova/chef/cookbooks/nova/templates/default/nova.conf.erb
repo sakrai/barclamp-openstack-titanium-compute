@@ -12,18 +12,12 @@ rootwrap_config=/etc/nova/rootwrap.conf
 
 
 # RABBITMQ
-#<% if @rabbit_settings -%>
-# This is hard code to local ip's, need to change
 rabbit_hosts=<%= @rabbit_settings[:address] %>
-#rabbit_hosts=10.49.117.227:5672,10.49.117.228:5672,10.49.117.229:5672
 rabbit_ha_queues=True
-#<% unless @rabbit_settings[:port].nil? -%>
 rabbit_port=<%= @rabbit_settings[:port] %>
-#<% end -%>
 rabbit_userid=<%= @rabbit_settings[:user] %>
 rabbit_password=<%= @rabbit_settings[:password] %>
 rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
-#<% end -%>
 
 
 # SCHEDULER
@@ -56,7 +50,7 @@ service_quantum_metadata_proxy=True
 # and we should be using whatever it generates.
 quantum_metadata_proxy_shared_secret=Secret
 <% else -%>
-#my_ip=<%= node[:nova][:my_ip] %>
+my_ip=<%= node[:nova][:my_ip] %>
 allow_same_net_traffic=<%= node[:nova][:network][:allow_same_net_traffic] ? "True" : "False" %>
 ec2_host=<%= @ec2_host %>
 ec2_dmz_host=<%= @ec2_dmz_host %>

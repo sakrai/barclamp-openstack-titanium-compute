@@ -76,8 +76,16 @@ end
 =end
 # end of change
 
-# sak - sql scripts to run to create db, user.
-server_root_password = node["percona"]["server_root_password"]
+# get password to run script
+server_root_password = ""
+db = search(:node, "roles:percona").first
+if db.length > 0
+  server_root_password = db.percona.server_root_password
+end
+
+Chef::Log.info("server_root_password at #{server_root_password}")
+
+# sql scripts to run to create db, user.
 template "/tmp/grants.sql" do
   source "grants.sql.erb"
   mode 0600

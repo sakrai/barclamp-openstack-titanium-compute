@@ -147,8 +147,6 @@ class NovaService < ServiceObject
       raise(I18n.t('model.service.dependency_missing', :name => @bc_name, :dependson => "keystone"))
     end
 
-    base["attributes"]["nova"]["service_password"] = '%012d' % rand(1e12)
-
     base["attributes"]["nova"]["glance_instance"] = ""
     begin
       glanceService = GlanceService.new(@logger)
@@ -200,6 +198,8 @@ class NovaService < ServiceObject
       raise(I18n.t('model.service.dependency_missing', :name => @bc_name, :dependson => "quantum"))
     end
 
+    # password unique for all nova services
+    base["attributes"]["nova"]["service_password"] = '%012d' % rand(1e12)
     base["attributes"]["nova"]["db"]["password"] = random_password
 
     @logger.debug("Nova create_proposal: exiting")
