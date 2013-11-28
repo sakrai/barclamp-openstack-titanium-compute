@@ -142,14 +142,11 @@ end
 =end
 # end of change
 
-# sak - use VIP
-#public_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "public").address
-#admin_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "admin").address
+#  use VIP
 public_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
 admin_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
-#public_api_ip = public_vip
-#admin_api_ip = admin_vip
-# end of change
+
+
 node[:nova][:api] = public_api_ip
 Chef::Log.info("Api server found at #{public_api_ip} #{admin_api_ip}")
 
@@ -167,7 +164,6 @@ glance_servers = search(:node, "roles:glance-server") || []
 if glance_servers.length > 0
   glance_server = glance_servers[0]
   glance_server = node if glance_server.name == node.name
-  #glance_server_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(glance_server, "admin").address
   glance_server_ip = admin_vip
   glance_server_port = glance_server[:glance][:api][:bind_port]
 else
@@ -314,10 +310,8 @@ else
   keystone = node
 end
 
-# sak - use VIP
-#keystone_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(keystone, "admin").address if keystone_address.nil?
+#  use VIP
 keystone_address = admin_vip
-#end of change
 keystone_token = keystone["keystone"]["service"]["token"]
 keystone_service_port = keystone["keystone"]["api"]["service_port"]
 keystone_admin_port = keystone["keystone"]["api"]["admin_port"]
@@ -332,10 +326,8 @@ quantum_servers = search(:node, "roles:quantum-server") || []
 if quantum_servers.length > 0
   quantum_server = quantum_servers[0]
   quantum_server = node if quantum_server.name == node.name
-  # sak - use VIP
-  #quantum_server_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(quantum_server, "admin").address
+  # use VIP
   quantum_server_ip = admin_vip
-  # end of change
   quantum_server_port = quantum_server[:quantum][:api][:service_port]
   quantum_service_user = quantum_server[:quantum][:service_user]
   quantum_service_password = quantum_server[:quantum][:service_password]
@@ -352,6 +344,7 @@ else
   quantum_service_password = nil
 end
 Chef::Log.info("Quantum server at #{quantum_server_ip}")
+
 
 template "/etc/nova/nova.conf" do
   source "nova.conf.erb"

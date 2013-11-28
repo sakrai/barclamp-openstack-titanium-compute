@@ -33,11 +33,61 @@ if node[:nova][:networking_backend]=="quantum"
 end
 
 include_recipe "nova::config"
-#include_recipe "percona::client"
-#include_recipe "database::client"
-#package "mysql-client"
+
 
 nova_package("compute")
+nova_package("api")
+
+# get VIP
+haproxy = search(:node, "roles:haproxy").first
+if haproxy.length > 0
+  admin_vip = haproxy.haproxy.admin_ip
+end
+
+env_filter = " AND keystone_config_environment:keystone-config-#{node[:nova][:keystone_instance]}"
+keystones = search(:node, "recipes:keystone\\:\\:server#{env_filter}") || []
+if keystones.length > 0
+  keystone = keystones[0]
+  keystone = node if keystone.name == node.name
+else
+  keystone = node
+end
+
+# use VIP
+keystone_address = admin_vip
+keystone_token = keystone["keystone"]["service"]["token"]
+keystone_service_port = keystone["keystone"]["api"]["service_port"]
+keystone_admin_port = keystone["keystone"]["api"]["admin_port"]
+keystone_service_tenant = keystone["keystone"]["service"]["tenant"]
+keystone_service_user = node["nova"]["service_user"]
+keystone_service_password = node["nova"]["service_password"]
+
+Chef::Log.info("Keystone server found at #{keystone_address}")
+Chef::Log.info("Keystone token:            #{keystone_token}")
+Chef::Log.info("Keystone service port:     #{keystone_service_port}")
+Chef::Log.info("Keystone admin port:       #{keystone_admin_port}")
+Chef::Log.info("Keystone service tenant:   #{keystone_service_tenant}")
+Chef::Log.info("Keystone service user:     #{keystone_service_user}")
+Chef::Log.info("Keystone service password: #{keystone_service_password}")
+Chef::Log.info("Keystone admin username:   #{keystone_service_user}")
+Chef::Log.info("Keystone admin password    #{keystone_service_password}")
+
+template "/etc/nova/api-paste.ini" do
+  source "api-paste.ini.erb"
+  owner node[:nova][:user]
+  group "root"
+  mode "0640"
+  variables(
+    :keystone_address => keystone_address,
+    :keystone_admin_token => keystone_token,
+    :keystone_service_port => keystone_service_port,
+    :keystone_service_tenant => keystone_service_tenant,
+    :keystone_service_user => keystone_service_user,
+    :keystone_service_password => keystone_service_password,
+    :keystone_admin_port => keystone_admin_port
+  )
+  notifies :restart, resources(:service => "nova-api"), :immediately
+end
 
 # ha_enabled activates Nova High Availability (HA) networking.
 # The nova "network" and "api" recipes need to be included on the compute nodes and
