@@ -12,15 +12,13 @@ rootwrap_config=/etc/nova/rootwrap.conf
 
 
 # RABBITMQ
-<% if @rabbit_settings -%>
-rabbit_host=<%= @rabbit_settings[:address] %>
-<% unless @rabbit_settings[:port].nil? -%>
+rabbit_hosts=<%= @rabbit_settings[:address] %>
+rabbit_ha_queues=True
 rabbit_port=<%= @rabbit_settings[:port] %>
-<% end -%>
 rabbit_userid=<%= @rabbit_settings[:user] %>
 rabbit_password=<%= @rabbit_settings[:password] %>
 rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
-<% end -%>
+
 
 # SCHEDULER
 # Default to multi-scheduler so that volume and compute can override
@@ -28,7 +26,9 @@ rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
 # API
 osapi_compute_extension=nova.api.openstack.compute.contrib.standard_extensions
 api_rate_limit = False
-
+metadata_listen=<%= node[:nova][:my_ip] %>
+ec2_listen=<%= node[:nova][:my_ip] %>
+osapi_compute_listen=<%= node[:nova][:my_ip] %>
 
 # NETWORK
 <% if node[:nova][:networking_backend]=="quantum" -%>

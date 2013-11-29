@@ -21,7 +21,6 @@
 # sak - add VIP
 haproxy = search(:node, "roles:haproxy").first
 if haproxy.length > 0
-  Chef::Log.info("admin vip at #{haproxy}")
   admin_vip = haproxy.haproxy.admin_ip
   public_vip = haproxy.haproxy.public_ip
 end
@@ -74,7 +73,10 @@ backend_name = "mysql"
 #end of change
 database_connection = "#{backend_name}://#{node[:nova][:db][:user]}:#{node[:nova][:db][:password]}@#{database_address}/#{node[:nova][:db][:database]}"
 
+# sak - rabbitmq intergration
+
 env_filter = " AND rabbitmq_config_environment:rabbitmq-config-#{node[:nova][:rabbitmq_instance]}"
+=begin
 rabbits = search(:node, "roles:rabbitmq-server#{env_filter}") || []
 if rabbits.length > 0
   rabbit = rabbits[0]
@@ -82,17 +84,54 @@ if rabbits.length > 0
 else
   rabbit = node
 end
-#rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "admin").address 
-rabbit_address = admin_vip
-Chef::Log.info("Rabbit server found at #{rabbit_address}")
+
+rabbit_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbit, "admin").address 
+=end
+# end of change
+
+# sak - get rabbitmq attribute values
+Chef::Log.info("============== Nova config recipe : Builds rabbitmq host string ==============") 
+rabbits = search(:node, "roles:rabbitmq") || [] 
+if rabbits.length > 0
+  rabbit = rabbits[0]
+  Chef::Log.info("Rabbit node #{rabbit}")
+  rabbit = node if rabbit.name == node.name
+else
+  rabbit = node
+end
+
+
+rabbitmq_port = rabbit[:rabbitmq][:port]
+rabbitmq_hosts = ""
+
+rabbits.each do |rabbitHost|
+  if rabbitHost == rabbits.last
+    host = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbitHost, "admin").address
+    rabbitmq_hosts = "#{rabbitmq_hosts}#{host}:#{rabbitmq_port}"
+  else
+    host = Chef::Recipe::Barclamp::Inventory.get_network_by_type(rabbitHost, "admin").address
+    rabbitmq_hosts = "#{rabbitmq_hosts}#{host}:#{rabbitmq_port},"
+  end
+end
+
+Chef::Log.info("Rabbit host address #{rabbitmq_hosts}") 
+Chef::Log.info("Rabbit port #{rabbit[:rabbitmq][:port]}") 
+Chef::Log.info("Rabbit userid #{rabbit[:rabbitmq][:user]}") 
+Chef::Log.info("Rabbit password #{rabbit[:rabbitmq][:password]}") 
+Chef::Log.info("Rabbit vhost #{rabbit[:rabbitmq][:vhost]}") 
+
 rabbit_settings = {
-  :address => rabbit_address,
-  :port => rabbit[:rabbitmq][:port],
-  :user => rabbit[:rabbitmq][:user],
-  :password => rabbit[:rabbitmq][:password],
-  :vhost => rabbit[:rabbitmq][:vhost]
+    :address => rabbitmq_hosts,
+    :port => rabbit[:rabbitmq][:port],
+    :user => rabbit[:rabbitmq][:user],
+    :password => rabbit[:rabbitmq][:password],
+    :vhost => rabbit[:rabbitmq][:vhost]
 }
 
+
+
+# sak - use VIP
+=begin
 apis = search(:node, "recipes:nova\\:\\:api#{env_filter}") || []
 if apis.length > 0 and !node[:nova][:network][:ha_enabled]
   api = apis[0]
@@ -100,12 +139,14 @@ if apis.length > 0 and !node[:nova][:network][:ha_enabled]
 else
   api = node
 end
-# sak - use VIP
-#public_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "public").address
-#admin_api_ip = api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "admin").address
-public_api_ip = public_vip
-admin_api_ip = admin_vip
+=end
 # end of change
+
+#  use VIP
+public_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
+admin_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(node, "admin").address
+
+
 node[:nova][:api] = public_api_ip
 Chef::Log.info("Api server found at #{public_api_ip} #{admin_api_ip}")
 
@@ -123,7 +164,6 @@ glance_servers = search(:node, "roles:glance-server") || []
 if glance_servers.length > 0
   glance_server = glance_servers[0]
   glance_server = node if glance_server.name == node.name
-  #glance_server_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(glance_server, "admin").address
   glance_server_ip = admin_vip
   glance_server_port = glance_server[:glance][:api][:bind_port]
 else
@@ -270,10 +310,8 @@ else
   keystone = node
 end
 
-# sak - use VIP
-#keystone_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(keystone, "admin").address if keystone_address.nil?
+#  use VIP
 keystone_address = admin_vip
-#end of change
 keystone_token = keystone["keystone"]["service"]["token"]
 keystone_service_port = keystone["keystone"]["api"]["service_port"]
 keystone_admin_port = keystone["keystone"]["api"]["admin_port"]
@@ -288,10 +326,8 @@ quantum_servers = search(:node, "roles:quantum-server") || []
 if quantum_servers.length > 0
   quantum_server = quantum_servers[0]
   quantum_server = node if quantum_server.name == node.name
-  # sak - use VIP
-  #quantum_server_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(quantum_server, "admin").address
+  # use VIP
   quantum_server_ip = admin_vip
-  # end of change
   quantum_server_port = quantum_server[:quantum][:api][:service_port]
   quantum_service_user = quantum_server[:quantum][:service_user]
   quantum_service_password = quantum_server[:quantum][:service_password]
@@ -308,6 +344,7 @@ else
   quantum_service_password = nil
 end
 Chef::Log.info("Quantum server at #{quantum_server_ip}")
+
 
 template "/etc/nova/nova.conf" do
   source "nova.conf.erb"

@@ -19,10 +19,13 @@
 
 include_recipe "nova::config"
 
-# sak - add VIP
-admin_vip = node[:haproxy][:admin_ip]
-public_vip = node[:haproxy][:public_ip]
-#end of change
+# add VIP
+haproxy = search(:node, "roles:haproxy").first
+if haproxy.length > 0
+  admin_vip = haproxy.haproxy.admin_ip
+  public_vip = haproxy.haproxy.public_ip
+end
+
 
 env_filter = " AND keystone_config_environment:keystone-config-#{node[:nova][:keystone_instance]}"
 keystones = search(:node, "recipes:keystone\\:\\:server#{env_filter}") || []
@@ -45,10 +48,8 @@ end
 
 nova_package("api")
 
-# sak - use VIP
-#keystone_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(keystone, "admin").address if keystone_address.nil?
+# use VIP
 keystone_address = admin_vip
-#end of change
 keystone_token = keystone["keystone"]["service"]["token"]
 keystone_service_port = keystone["keystone"]["api"]["service_port"]
 keystone_admin_port = keystone["keystone"]["api"]["admin_port"]
@@ -72,7 +73,7 @@ template "/etc/nova/api-paste.ini" do
   group "root"
   mode "0640"
   variables(
-    :keystone_ip_address => keystone_address,
+    :keystone_address => keystone_address,
     :keystone_admin_token => keystone_token,
     :keystone_service_port => keystone_service_port,
     :keystone_service_tenant => keystone_service_tenant,
@@ -91,12 +92,10 @@ else
   api = node
 end
 
-# sak - use VIP
-#public_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "public").address
-#admin_api_ip = Chef::Recipe::Barclamp::Inventory.get_network_by_type(api, "admin").address
+# use VIP
 public_api_ip = public_vip
 admin_api_ip = admin_vip
-# end of change
+
 
 keystone_register "nova api wakeup keystone" do
   host keystone_address

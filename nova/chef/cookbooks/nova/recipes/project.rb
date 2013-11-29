@@ -22,6 +22,17 @@
 include_recipe "nova::database"
 include_recipe "nova::config"
 
+# sak - add VIP
+haproxy = search(:node, "roles:haproxy").first
+if haproxy.length > 0
+  admin_vip = haproxy.haproxy.admin_ip
+end
+
+Chef::Log.info("============================================")
+Chef::Log.info("admin vip at #{admin_vip}")
+Chef::Log.info("============================================")
+#end of change
+
 # ha_enabled activates Nova High Availability (HA) networking.
 # The nova "network" and "api" recipes need to be included on the compute nodes and
 # we must specify the --multi_host=T switch on "nova-manage network create". 
@@ -44,15 +55,19 @@ execute "nova-manage floating create --ip_range=#{node[:nova][:network][:floatin
 end
 
 unless node[:nova][:network][:tenant_vlans]
-  env_filter = " AND database_config_environment:database-config-#{node[:nova][:db][:database_instance]}"
-  db_server = search(:node, "roles:database-server#{env_filter}")[0]
-  db_server = node if db_server.name == node.name
-  backend_name = Chef::Recipe::Database::Util.get_backend_name(db_server)
+  # sak - use percona
+  #env_filter = " AND database_config_environment:database-config-#{node[:nova][:db][:database_instance]}"
+  #db_server = search(:node, "roles:database-server#{env_filter}")[0]
+  #db_server = node if db_server.name == node.name
+  #backend_name = Chef::Recipe::Database::Util.get_backend_name(db_server)
+  database_address = admin_vip
+  Chef::Log.info("database server found at #{database_address}")
+  backend_name = "mysql"
 
   execute "sql-fix-ranges-fixed" do
     case backend_name
       when "mysql"
-        command "/usr/bin/mysql -u #{node[:nova][:db][:user]} -h #{db_server[:database][:api_bind_host]} -p#{node[:nova][:db][:password]} #{node[:nova][:db][:database]} < /etc/nova/nova-fixed-range.sql"
+        command "/usr/bin/mysql -u #{node[:nova][:db][:user]} -h #{database_address} -p#{node[:nova][:db][:password]} #{node[:nova][:db][:database]} < /etc/nova/nova-fixed-range.sql"
       when "postgresql"
         command "PGPASSWORD=#{node[:nova][:db][:password]} psql -h #{db_server[:database][:api_bind_host]} -U #{node[:nova][:db][:user]} #{node[:nova][:db][:database]} < /etc/nova/nova-fixed-range.sql"
     end
@@ -102,7 +117,10 @@ else
   keystone = node
 end
 
-keystone_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(keystone, "admin").address if keystone_address.nil?
+# sak - use VIP
+#keystone_address = Chef::Recipe::Barclamp::Inventory.get_network_by_type(keystone, "admin").address if keystone_address.nil?
+keystone_address = admin_vip
+#end of change
 keystone_token = keystone["keystone"]["admin"]["token"] rescue nil
 admin_username = keystone["keystone"]["admin"]["username"] rescue nil
 admin_password = keystone["keystone"]["admin"]["password"] rescue nil
