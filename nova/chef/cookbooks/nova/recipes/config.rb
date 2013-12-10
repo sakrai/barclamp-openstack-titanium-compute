@@ -331,6 +331,7 @@ if quantum_servers.length > 0
   quantum_server_port = quantum_server[:quantum][:api][:service_port]
   quantum_service_user = quantum_server[:quantum][:service_user]
   quantum_service_password = quantum_server[:quantum][:service_password]
+  quantum_metadata_secret = quantum_server[:quantum][:quantum_metadata_proxy_shared_secret] 
   if quantum_server[:quantum][:networking_mode] != 'local'
     per_tenant_vlan=true
   else
@@ -367,7 +368,8 @@ template "/etc/nova/nova.conf" do
             :quantum_service_password => quantum_service_password,
             :keystone_service_tenant => keystone_service_tenant,
             :keystone_address => keystone_address,
-            :keystone_admin_port => keystone_admin_port
+            :keystone_admin_port => keystone_admin_port,
+            :admin_vip  => admin_vip
             )
 end
 

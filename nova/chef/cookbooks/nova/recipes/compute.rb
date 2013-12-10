@@ -18,6 +18,10 @@
 # limitations under the License.
 #
 
+# We are on computes nodes, nova.conf needs to have specific metadata settings
+node.set[:nova][:nova_computes] = true 
+
+
 if node[:nova][:networking_backend]=="quantum"
 #unless node[:nova][:use_gitrepo]
 #  package "quantum" do

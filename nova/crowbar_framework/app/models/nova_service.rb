@@ -220,12 +220,12 @@ class NovaService < ServiceObject
     net_svc = NetworkService.new @logger
     tnodes = role.override_attributes["nova"]["elements"]["nova-multi-controller"]
     if role.default_attributes["nova"]["networking_backend"]=="quantum"
-      tnodes.each do |n|
-        net_svc.allocate_ip "default","public","host",n
-      end unless tnodes.nil?
       quantum = ProposalObject.find_proposal("quantum",role.default_attributes["nova"]["quantum_instance"])
       all_nodes.each do |n|
         if quantum["attributes"]["quantum"]["networking_mode"] == "gre"
+          # If GRE we need to create 2 network interfaces, public and os_sdn on every node 
+          @logger.info("Creates public and os_sdn interfaces on nova node")
+          net_svc.allocate_ip "default","public","host",n
           net_svc.allocate_ip "default", "os_sdn", "host", n
         else
           net_svc.enable_interface "default", "nova_fixed", n
@@ -241,6 +241,7 @@ class NovaService < ServiceObject
           end
         end
       end
+
       unless role.default_attributes["nova"]["network"]["tenant_vlans"]
         all_nodes.each do |n|
           net_svc.enable_interface "default", "nova_fixed", n
