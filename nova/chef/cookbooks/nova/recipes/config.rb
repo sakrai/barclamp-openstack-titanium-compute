@@ -366,6 +366,7 @@ template "/etc/nova/nova.conf" do
             :quantum_server_port => quantum_server_port,
             :quantum_service_user => quantum_service_user,
             :quantum_service_password => quantum_service_password,
+            :quantum_metadata_secret => quantum_metadata_secret,
             :keystone_service_tenant => keystone_service_tenant,
             :keystone_address => keystone_address,
             :keystone_admin_port => keystone_admin_port,

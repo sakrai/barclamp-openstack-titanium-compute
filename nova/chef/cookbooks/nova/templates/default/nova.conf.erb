@@ -27,7 +27,7 @@ rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
 osapi_compute_extension=nova.api.openstack.compute.contrib.standard_extensions
 api_rate_limit = False
 <% if node[:nova][:nova_computes] -%>
-metadata_host=<%= admin_vip %>
+metadata_host=<%= @admin_vip %>
 <% else -%>
 metadata_listen=<%= node[:nova][:my_ip] %>
 ec2_listen=<%= node[:nova][:my_ip] %>
