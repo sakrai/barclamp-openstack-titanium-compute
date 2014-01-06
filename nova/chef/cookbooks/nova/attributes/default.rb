@@ -20,6 +20,8 @@
 
 ::Chef::Node.send(:include, Opscode::OpenSSL::Password)
 
+# boolean computes/controllers nodes for specific attributes in nova.conf
+default[:nova][:nova_computes] = false 
 
 #
 # Database Settings

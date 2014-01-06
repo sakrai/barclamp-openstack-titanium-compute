@@ -26,9 +26,13 @@ rabbit_virtual_host=<%= @rabbit_settings[:vhost] %>
 # API
 osapi_compute_extension=nova.api.openstack.compute.contrib.standard_extensions
 api_rate_limit = False
+<% if node[:nova][:nova_computes] -%>
+metadata_host=<%= @admin_vip %>
+<% else -%>
 metadata_listen=<%= node[:nova][:my_ip] %>
 ec2_listen=<%= node[:nova][:my_ip] %>
 osapi_compute_listen=<%= node[:nova][:my_ip] %>
+<% end -%>
 
 # NETWORK
 <% if node[:nova][:networking_backend]=="quantum" -%>
@@ -46,9 +50,7 @@ linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
 security_group_api=quantum
 firewall_driver=nova.virt.firewall.NoopFirewallDriver
 service_quantum_metadata_proxy=True
-# Not really secret.  Quantum should be randomly generating this,
-# and we should be using whatever it generates.
-quantum_metadata_proxy_shared_secret=Secret
+quantum_metadata_proxy_shared_secret=<%= @quantum_metadata_secret %>
 <% else -%>
 my_ip=<%= node[:nova][:my_ip] %>
 allow_same_net_traffic=<%= node[:nova][:network][:allow_same_net_traffic] ? "True" : "False" %>
