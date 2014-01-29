@@ -33,8 +33,8 @@ default[:nova][:db][:database] = "nova"
 #
 # Hypervisor Settings
 #
-#default[:nova][:libvirt_type] = "kvm"    
-default[:nova][:libvirt_type] = "qemu"    
+default[:nova][:libvirt_type] = "kvm"    
+#default[:nova][:libvirt_type] = "qemu"
 
 #
 # KVM Settings                       

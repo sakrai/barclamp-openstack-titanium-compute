@@ -47,6 +47,9 @@ quantum_admin_password=<%= @quantum_service_password %>
 quantum_admin_auth_url=http://<%= @keystone_address %>:<%= @keystone_admin_port %>/v2.0
 libvirt_vif_driver=nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver
 linuxnet_interface_driver=nova.network.linux_net.LinuxOVSInterfaceDriver
+<% if node[:nova][:libvirt_type] %>
+libvirt_type=<%= node[:nova][:libvirt_type] %>
+<% end -%>
 security_group_api=quantum
 firewall_driver=nova.virt.firewall.NoopFirewallDriver
 service_quantum_metadata_proxy=True
