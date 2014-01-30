@@ -17,12 +17,19 @@
 #
 
 ####
+# recipe added as qemu package is required for creating bootable volumes.
 Chef::Log.info(">>>>>> Nova: qemu Recipe")
 
 if node["nova"]["libvirt_type"] == "qemu"
   Chef::Log.info(">>>>>> Nova: hypervisor qemu")
-  # recipe added as qemu package is required for creating bootable volumes.
   package "qemu" do
     action :install
   end
+elsif node["nova"]["libvirt_type"] == "kvm"
+  Chef::Log.info(">>>>>> Nova: hypervisor kvm")
+  package "qemu-kvm" do
+    action :install
+  end
 end
+
+
